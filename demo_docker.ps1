@@ -27,13 +27,19 @@ function Vault-Exec([string[]]$vaultArgs) {
 Write-Step "Checks"
 $docker = Get-Command docker -ErrorAction SilentlyContinue
 if ($null -eq $docker) {
-  throw "Docker n'est pas installé. Installe Docker Desktop puis relance."
+  throw "Docker n'est pas installe. Installe Docker Desktop puis relance."
 }
 
 # Vérifier que le daemon Docker tourne (Docker Desktop démarré)
-$serverVersion = docker info --format '{{.ServerVersion}}' 2>$null
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($serverVersion)) {
-  throw "Docker est installé mais le daemon ne tourne pas. Démarre Docker Desktop puis relance le script."
+$serverVersion = & docker info --format '{{.ServerVersion}}' 2>&1
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$serverVersion)) {
+  throw (@(
+    "Docker est installe mais le daemon Docker n'est pas joignable.",
+    "- Demarre Docker Desktop et attends l'etat 'Running'.",
+    "- Verifie que le moteur Linux est actif (recommande pour Vault).",
+    "- Puis relance.",
+    "Detail Docker: $serverVersion"
+  ) -join "`n")
 }
 
 Write-Step "(Optional) Create Docker network (if absent)"
@@ -43,13 +49,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Step "Start Vault in dev mode (container)"
-# Nettoyage si un container du même nom existe
+# Nettoyage si un container du meme nom existe
 $existing = docker ps -a --format "{{.Names}}" 2>$null | Where-Object { $_ -eq $ServerName }
 if ($existing) {
   docker rm -f $ServerName 2>$null | Out-Null
 }
 
-# Lancement (dev mode = auto-unseal, stockage en mémoire)
+# Lancement (dev mode = auto-unseal, stockage en memoire)
 docker run -d --name $ServerName --network $NetworkName -p 8200:8200 `
   -e VAULT_DEV_ROOT_TOKEN_ID=$RootToken `
   -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 `

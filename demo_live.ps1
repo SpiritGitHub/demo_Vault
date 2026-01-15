@@ -24,8 +24,13 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 $serverVersion = docker info --format '{{.ServerVersion}}' 2>$null
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($serverVersion)) {
-  throw "Docker daemon is not running. Start Docker Desktop, then retry."
+$serverVersion = & docker info --format '{{.ServerVersion}}' 2>&1
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$serverVersion)) {
+  throw (@(
+    "Docker est installé mais le daemon Docker n'est pas joignable.",
+    "Démarre Docker Desktop puis relance.",
+    "Détail Docker: $serverVersion"
+  ) -join "`n")
 }
 
 Step "(Optional) Pull image" "I pre-pull the Vault image to avoid waiting during the demo."
@@ -66,4 +71,4 @@ docker exec -e VAULT_ADDR="http://127.0.0.1:8200" -e VAULT_TOKEN=$token $ServerN
 Step "Test denied write" "But writing elsewhere is denied: least privilege in action."
 docker exec -e VAULT_ADDR="http://127.0.0.1:8200" -e VAULT_TOKEN=$token $ServerName vault kv put kv/other foo=bar
 
-Write-Host "`nDone. Stop with: .\demo\cleanup.ps1" -ForegroundColor Cyan
+Write-Host "`nDone. Stop with: .\cleanup.ps1" -ForegroundColor Cyan

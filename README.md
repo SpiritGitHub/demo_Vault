@@ -55,6 +55,12 @@ Pour une présentation orale, version interactive avec pauses et phrases à dire
 .\demo_live.ps1
 ```
 
+## Démo “live avancée”
+Version plus complète pour aller au-delà du KV et illustrer aussi audit, tokens (TTL/renew/revoke), transit (encrypt/decrypt) et response wrapping :
+```powershell
+.\demo_live_advanced.ps1
+```
+
 ## Nettoyage
 Arrêt/suppression du conteneur + du réseau Docker de démo :
 ```powershell

@@ -11,9 +11,14 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 # Ensure Docker Desktop/daemon is running
-$serverVersion = docker info --format '{{.ServerVersion}}' 2>$null
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($serverVersion)) {
-  throw "Docker daemon is not running. Start Docker Desktop, then retry."
+$serverVersion = & docker info --format '{{.ServerVersion}}' 2>&1
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace([string]$serverVersion)) {
+  throw (@(
+    "Docker est installe mais le daemon Docker n'est pas joignable.",
+    "- Demarre Docker Desktop et attends l'etat 'Running'.",
+    "- Puis relance.",
+    "Detail Docker: $serverVersion"
+  ) -join "`n")
 }
 
 if (-not $SkipPull) {
